@@ -1,5 +1,11 @@
+#!/bin/python3
+
 from datetime import datetime
 from math import pi, cos, sin, acos, radians, tan
+
+"""
+To learn more about calculating solar time using geolo
+"""
 
 
 def cos_dg(degrees):
@@ -12,10 +18,6 @@ def acos_dg(x):
 
 def tan_dg(degrees):
     return tan(radians(degrees))
-
-
-def minutes_to_daytime(minutes):
-    return (int(minutes // 60), int(minutes - (minutes // 60) * 60))
 
 
 def fractional_year(date=datetime.now()):
@@ -41,18 +43,18 @@ def hour_angle_sunrise(latitude, decl=sol_declination()):
 def sunrise(longitude, latitude, timezone, ha=None, eqtime=eqtime()):
     if ha == None:
         ha = hour_angle_sunrise(latitude)
-    return 720 - 4 * (longitude + ha) - eqtime + 60 * timezone
+    return round(720 - 4 * (longitude + ha) - eqtime + 60 * timezone) * 60
 
 
 def sunset(longitude, latitude, timezone, ha=None, eqtime=eqtime()):
     if ha == None:
         ha = hour_angle_sunrise(latitude)
-    return 720 - 4 * (longitude - ha) - eqtime + 60 * timezone
+    return round(720 - 4 * (longitude - ha) - eqtime + 60 * timezone) * 60
 
 
 def sol_noon(longitude, timezone, eqtime=eqtime()):
-    return 720 - 4 * longitude - eqtime + 60 * timezone
+    return round(720 - 4 * longitude - eqtime + 60 * timezone) * 60
 
 
-def solartime_tuple(latitude, longitude, timezone):
+def timetuple(latitude, longitude, timezone):
     return (sunrise(longitude, latitude, timezone), sol_noon(longitude, timezone), sunset(longitude, latitude, timezone))
