@@ -1,44 +1,38 @@
 #!/bin/python3
 
-from json import loads
-import requests
+import time
+import gi
 
-RETRY_LIMIT = 5
+gi.require_version('Geoclue', '2.0')
+from gi.repository import Geoclue
+from multiprocessing.pool import ThreadPool
 
-
-def send_request(api_addr):
-    """
-    Arg: API http address\n
-    Returns: requested data in form of string\n
-    If request fails function returns None
-    """
-    attempts = 1
-    while attempts <= RETRY_LIMIT:
-        try:
-            r = requests.get(api_addr)
-            r.raise_for_status()
-            return r.text
-        except requests.exceptions.HTTPError as errhttp:
-            print('HTTP Error: ', errhttp)
-        except requests.exceptions.ConnectionError as errc:
-            print('Connection Error: ', errc)
-        except requests.exceptions.Timeout as errt:
-            print('Connection timeout: ', errt)
-
-        print(
-            f'Trying to send request again. Attempt no. {attempts} of {RETRY_LIMIT}')
-        attempts += 1
-
-    return None
+TIMEOUT = 3  # geolocation request timeout in seconds
+INTERVAL = 0.01
 
 
-def get_external_ip():
-    return send_request('https://api.ipify.org')
+def __get_location(_):
+    clue = Geoclue.Simple.new_sync(
+        'localization', Geoclue.AccuracyLevel.NEIGHBORHOOD, None)
+    location = clue.get_location()
+    return location.get_property('latitude'), location.get_property('longitude')
 
 
-def ip_geolocation(ip):
-    location = loads(send_request(f'https://api.ipgeolocationapi.com/geolocate/{ip}'))
-    if location == None:
-        return None
-    return location['geo']['latitude'], location['geo']['longitude']
+def get_geolocation():
+    pool = ThreadPool(processes=1)
+    locator = pool.apply_async(__get_location, range(1))
 
+    timer = 0
+    result = None
+
+    while timer < TIMEOUT:
+        timer += INTERVAL
+
+        if locator.ready():
+            result = locator.get()
+            break
+
+        time.sleep(INTERVAL)
+
+    pool.close()
+    return result

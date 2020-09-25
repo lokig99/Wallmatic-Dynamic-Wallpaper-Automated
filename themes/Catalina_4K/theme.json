@@ -1,0 +1,26 @@
+{
+    "theme_title": "Catalina MacOS",
+    "description": "",
+    "credits": "Apple",
+    "wallpaper_filename": "Catalina_*.jpg",
+    "filelist": {
+        "sunrise": [
+            1,
+            2
+        ],
+        "noon": [
+            3
+        ],
+        "day": [
+            4
+        ],
+        "sunset": [
+            5,
+            6,
+            7
+        ],
+        "night": [
+            8
+        ]
+    }
+}

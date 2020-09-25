@@ -1,0 +1,23 @@
+{
+    "theme_title": "Big Sur Abstract MacOS",
+    "description": "",
+    "credits": "Apple",
+    "wallpaper_filename": "Big_Sur_Abstract_*.jpg",
+    "filelist": {
+        "sunrise": [
+            1
+        ],
+        "noon": [
+            1
+        ],
+        "day": [
+            1
+        ],
+        "sunset": [
+            1
+        ],
+        "night": [
+            2
+        ]
+    }
+}
