@@ -49,7 +49,11 @@ def loop():
         return is_darkmode
 
     prev_date = current_date()
-    lat, lon = loc.get_geolocation()
+    try:
+        lat, lon = loc.get_geolocation()
+    except loc.EX_RequestTimeout as e:
+        print(e)
+        lat, lon = 0, 0
     start, end = get_lightmode_timeframe(lat, lon)
     is_darkmode = change_theme_on_timeframe(
         start, end, is_darkmode=False, force_refresh=True)

@@ -38,12 +38,13 @@ class DynWallpaper:
             self.__latitude, self.__longitude, self.__timezone)
 
     def set_geolocation_online(self):
-        res = loc.get_geolocation()
-        if res is not None:
-            self.__latitude, self.__longitude = res
+        try:
+            self.__latitude, self.__longitude = loc.get_geolocation()
             return True
-
-        self.__latitude, self.__longitude = DEFAULT_GEOLOCATION
+        except loc.EX_RequestTimeout as e:
+            print(
+                e, f"Setting fallback default geolocation: {DEFAULT_GEOLOCATION}", sep="\n")
+            self.__latitude, self.__longitude = DEFAULT_GEOLOCATION
         return False
 
     def set_geolocation_manually(self, latitude: float, longitude: float):

@@ -21,6 +21,7 @@ def dynwallpaper_set_theme():
 
     Dynwall.update_soltime()
 
+    print("\n")
     Dynwall.set_theme(select_theme())
 
     # debug info
