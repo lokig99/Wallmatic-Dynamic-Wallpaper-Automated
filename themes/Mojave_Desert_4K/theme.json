@@ -30,5 +30,8 @@
             15,
             16
         ]
+    },
+    "optional_settings": {
+        "preferred_transition_duration": 1200
     }
 }

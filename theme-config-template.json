@@ -9,5 +9,8 @@
         "day": [],
         "sunset": [],
         "night": []
+    },
+    "optional_settings": {
+        "preferred_transition_duration": 0
     }
 }

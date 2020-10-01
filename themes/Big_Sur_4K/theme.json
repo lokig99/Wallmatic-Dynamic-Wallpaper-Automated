@@ -22,5 +22,8 @@
         "night": [
             8
         ]
+    },
+    "optional_settings": {
+        "preferred_transition_duration": 1800
     }
 }

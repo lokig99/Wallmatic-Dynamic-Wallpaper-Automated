@@ -1,6 +1,6 @@
 #!/bin/python3
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import pi, cos, sin, acos, radians, tan
 
 """
@@ -60,3 +60,32 @@ def sol_noon(longitude, timezone, eqtime=eq_time()):
 def timetuple(latitude, longitude, timezone):
     return (
         sunrise(longitude, latitude, timezone), sol_noon(longitude, timezone), sunset(longitude, latitude, timezone))
+
+
+def __get_daytime_dt(daytime_func: callable, latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
+    fy = fractional_year(date)
+    eqt = eq_time(fy)
+    dec = sol_declination(fy)
+    ha = hour_angle_sunrise(latitude, dec)
+
+    if daytime_func is sol_noon:
+        daytime_seconds = daytime_func(longitude, timezone, eqt)
+    else:
+        daytime_seconds = daytime_func(longitude, latitude, timezone, ha, eqt)
+
+    dt = datetime(date.year, date.month, date.day) + \
+        timedelta(seconds=daytime_seconds)
+
+    return dt
+
+
+def get_sunset_datetime(latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
+    return __get_daytime_dt(sunset, latitude, longitude, date, timezone)
+
+
+def get_sunrise_datetime(latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
+    return __get_daytime_dt(sunrise, latitude, longitude, date, timezone)
+
+
+def get_noon_datetime(latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
+    return __get_daytime_dt(sol_noon, latitude, longitude, date, timezone)
