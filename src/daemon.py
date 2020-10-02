@@ -7,9 +7,10 @@ from datetime import datetime, timedelta
 import utils.localization as loc
 import utils.solartime as soltime
 from utils.misc import local_tzoffset
+from gui.appindicator import get_night_mode_status
 from utils.gnome_theming import change_cursor_theme, change_gtk_theme, change_shell_theme
 
-INTERVAL_SEC = 1
+INTERVAL_SEC = 0.5
 
 
 def in_timeframe(start: datetime, end: datetime) -> bool:
@@ -34,17 +35,22 @@ def loop():
         dt_timetuple = datetime.now().timetuple()
         return dt_timetuple.tm_year, dt_timetuple.tm_yday
 
+    def change_themes(gtk_theme: str, shell_theme: str, cursor_theme: str) -> bool:
+        change_gtk_theme(gtk_theme)
+        time.sleep(0.1)
+        change_cursor_theme(cursor_theme)
+        time.sleep(0.1)
+        change_shell_theme(shell_theme)
+
     def change_theme_on_timeframe(start: datetime, end: datetime, is_darkmode: bool, force_refresh=False) -> bool:
         if in_timeframe(start, end):
             if is_darkmode or force_refresh:
-                change_gtk_theme('Pop')
-                change_shell_theme('Pop')
-                change_cursor_theme('xcursor-breeze-snow')
+                change_themes(gtk_theme='Pop', shell_theme='Pop',
+                              cursor_theme='xcursor-breeze-snow')
                 is_darkmode = False
         elif not is_darkmode:
-            change_gtk_theme('Pop-dark')
-            change_shell_theme('Pop-dark')
-            change_cursor_theme('xcursor-breeze')
+            change_themes(gtk_theme='Pop-dark', shell_theme='Pop-dark',
+                          cursor_theme='xcursor-breeze')
             is_darkmode = True
         return is_darkmode
 
@@ -59,11 +65,17 @@ def loop():
         start, end, is_darkmode=False, force_refresh=True)
 
     while True:
-        cur_date = current_date()
-        if prev_date != cur_date:
-            start, end = get_lightmode_timeframe(lat, lon)
-            prev_date = cur_date
+        if get_night_mode_status():
+            if not is_darkmode:
+                change_themes(gtk_theme='Pop-dark', shell_theme='Pop-dark',
+                              cursor_theme='xcursor-breeze')
+                is_darkmode = True
+        else:
+            cur_date = current_date()
+            if prev_date != cur_date:
+                start, end = get_lightmode_timeframe(lat, lon)
+                prev_date = cur_date
 
-        is_darkmode = change_theme_on_timeframe(start, end, is_darkmode)
+            is_darkmode = change_theme_on_timeframe(start, end, is_darkmode)
 
         time.sleep(INTERVAL_SEC)

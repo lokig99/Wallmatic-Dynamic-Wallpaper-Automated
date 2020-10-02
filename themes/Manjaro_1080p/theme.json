@@ -1,0 +1,24 @@
+{
+    "theme_title": "Manjaro Time",
+    "description": "Default Manjaro GNOME timed wallpaper",
+    "credits": "Manjaro Linux",
+    "wallpaper_filename": "manjaro-*.jpg",
+    "filelist": {
+        "sunrise": [
+            1
+        ],
+        "noon": [],
+        "day": [
+            2
+        ],
+        "sunset": [
+            3
+        ],
+        "night": [
+            4
+        ]
+    },
+    "optional_settings": {
+        "preferred_transition_duration": 7200
+    }
+}

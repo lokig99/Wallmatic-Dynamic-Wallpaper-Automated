@@ -49,6 +49,7 @@ def get_geolocation() -> tuple:
     pool.close()
 
     if result is None:
-        raise EX_RequestTimeout(f"Request attempt took longer than timeout limit: {TIMEOUT} seconds")
+        raise EX_RequestTimeout(
+            f"Request attempt took longer than timeout limit: {TIMEOUT} seconds")
 
     return result

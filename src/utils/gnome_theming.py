@@ -17,35 +17,29 @@ SHELL_DIR = 'gnome-shell'
 CURSOR_DIR = 'cursors'
 
 
-def convert_to_simple_string(text: str) -> str:
-    return re.compile(r'[^a-zA-Z0-9_-]+', re.UNICODE).sub('', text)
+def __convert_to_simple_string(text: str) -> str:
+    return re.compile(r'[^a-zA-Z0-9_/.-]+', re.UNICODE).sub('', text)
 
 
 def get_gtk_theme() -> str:
     cmd = 'gsettings get org.gnome.desktop.interface gtk-theme'
-    theme, err = subprocess.Popen(
+    theme, _ = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True).communicate()
-    if err == '':
-        return convert_to_simple_string(theme)
-    return ''
+    return __convert_to_simple_string(theme)
 
 
 def get_shell_theme() -> str:
     cmd = 'gsettings get org.gnome.shell.extensions.user-theme name'
-    theme, err = subprocess.Popen(
+    theme, _ = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True).communicate()
-    if err == '':
-        return convert_to_simple_string(theme)
-    return ''
+    return __convert_to_simple_string(theme)
 
 
 def get_wallpaper() -> str:
     cmd = 'gsettings get org.gnome.desktop.background picture-uri'
-    wallpaper, err = subprocess.Popen(
+    wallpaper, _ = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True).communicate()
-    if err == '':
-        return wallpaper
-    return ''
+    return __convert_to_simple_string(wallpaper)
 
 
 def change_gtk_theme(theme_name: str):
@@ -61,6 +55,12 @@ def change_cursor_theme(theme_name: str):
 def change_shell_theme(theme_name: str):
     subprocess.call(
         f'gsettings set org.gnome.shell.extensions.user-theme name {theme_name}', shell=True)
+
+
+def change_wallpaper(wallpaper_path: str):
+    wallpaper_path = os.path.abspath(wallpaper_path)
+    subprocess.call(
+        f'gsettings set org.gnome.desktop.background picture-uri "file:///{wallpaper_path}"', shell=True)
 
 
 def get_themes(dirpath: str) -> list:

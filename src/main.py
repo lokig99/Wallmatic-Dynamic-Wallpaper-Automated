@@ -9,7 +9,9 @@ import daemon
 import gui.appindicator as appindicator
 from utils.theme import select_theme
 from dynwallpaper import DynWallpaper
+from utils.gnome_theming import change_wallpaper
 from definitions.version import VERSION, NAME, AUTHOR
+
 
 def dynwallpaper_set_theme():
     print(f"{NAME} by {AUTHOR} (version: {VERSION})\n")
@@ -28,11 +30,11 @@ def dynwallpaper_set_theme():
     print('\n DEBUG INFO\n')
     print(json.dumps(Dynwall.get_data_summary(), indent=4))
 
-    xmlpath = os.path.abspath(Dynwall.generate_xml())
+    xmlpath, _ = Dynwall.create_wallpaper_xml_files()
+    xmlpath = os.path.abspath(xmlpath)
 
     # set newly generated wallpaper
-    subprocess.call(
-        f'gsettings set org.gnome.desktop.background picture-uri "file:///{xmlpath}"', shell=True)
+    change_wallpaper(xmlpath)
 
 
 if __name__ == "__main__":

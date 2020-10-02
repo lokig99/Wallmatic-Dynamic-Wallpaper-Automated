@@ -26,6 +26,8 @@ NOON_DURATION = 1800
 # rough average approximation based on nautical twilight for latitudes between 0 to 70 degrees (N/S)
 TWILIGHT_DURATION = 3600
 
+NIGHTMODE = "NightMode"
+
 # ---------------- Dynamic Wallpaper class --------------------
 
 
@@ -63,7 +65,7 @@ class DynWallpaper:
     def set_timezone(self, timezone: float):
         self.__timezone = timezone
 
-    def __calculate_timings(self, transition_time: int) -> dict:
+    def __calculate_timings(self, transition_time: int, nightmode=False) -> dict:
         from itertools import repeat
         timings = dict(zip(themedef.DAYTIMES, repeat([])))
         sunrise_dur = self.__snoon - self.__sunrise
@@ -74,20 +76,32 @@ class DynWallpaper:
                       noon_dur) - day_dur + TWILIGHT_DURATION
         night_dur = DAY_LENGTH - sunrise_dur - noon_dur - day_dur - sunset_dur
 
-        if len(self.__theme.filelist_sunrise()) == 0:
+        if len(self.__theme.filelist_sunrise()) == 0 or nightmode:
             day_dur += sunrise_dur
             sunrise_dur = 0
 
-        if len(self.__theme.filelist_noon()) == 0:
+        if len(self.__theme.filelist_noon()) == 0 or nightmode:
             day_dur += noon_dur
             noon_dur = 0
 
-        if len(self.__theme.filelist_sunset()) == 0:
+        if len(self.__theme.filelist_sunset()) == 0 or nightmode:
             day_dur += sunset_dur
             sunset_dur = 0
 
+        if nightmode:
+            day_dur += night_dur
+            night_dur = 0
+
         durations = [sunrise_dur, noon_dur, day_dur, sunset_dur, night_dur]
-        daytime_files = self.__theme.filelist_all()
+
+        if nightmode:
+            daytime_files_amounts = dict([(d, 0) for d in themedef.DAYTIMES])
+            daytime_files_amounts[themedef.FL_DAY] = len(
+                self.__theme.filelist_night())
+        else:
+            daytime_files = self.__theme.filelist_all()
+            daytime_files_amounts = dict(
+                [(d, len(daytime_files[d])) for d in daytime_files])
 
         for i, daytime in enumerate(themedef.DAYTIMES):
             if durations[i] == 0:
@@ -95,15 +109,16 @@ class DynWallpaper:
                 continue
 
             trans_time = transition_time
-            if trans_time * len(daytime_files[daytime]) >= durations[i]:
+            if trans_time * daytime_files_amounts[daytime] >= durations[i]:
                 print(
                     f'WARNING: Transitions take longer than duration of {daytime}! Fixing timings...')
                 trans_time = (
-                    durations[i] - len(daytime_files[daytime])) // len(daytime_files[daytime])
+                    durations[i] - daytime_files_amounts[daytime]) // daytime_files_amounts[daytime]
 
-            sub_dur = durations[i] - trans_time * len(daytime_files[daytime])
-            static_dur = [sub_dur // len(daytime_files[daytime])
-                          for _ in range(len(daytime_files[daytime]))]
+            sub_dur = durations[i] - trans_time * \
+                daytime_files_amounts[daytime]
+            static_dur = [sub_dur // daytime_files_amounts[daytime]
+                          for _ in range(daytime_files_amounts[daytime])]
 
             # fix static time
             if sum(static_dur) != sub_dur:
@@ -118,12 +133,7 @@ class DynWallpaper:
 
         return timings
 
-    def generate_xml(self, transition_time=600) -> str:
-        opt_sett = self.__theme.optional_settings()
-        if themedef.OPT_PREF_TRANSITION_DURATION in opt_sett:
-            transition_time = opt_sett[themedef.OPT_PREF_TRANSITION_DURATION]
-        timings = self.__calculate_timings(transition_time)
-
+    def __generate_xml_string(self, daytime_files: dict, timings: dict, disable_transitions=False) -> str:
         root = Et.Element("background")
         start_time = Et.SubElement(root, "starttime")
 
@@ -135,8 +145,6 @@ class DynWallpaper:
             start_time, "minute").text = f"{(self.__sunrise % 3600) // 60}"
         Et.SubElement(start_time, "second").text = "0"
 
-        daytime_files = self.__theme.filelist_all()
-
         for count, daytime in enumerate(themedef.DAYTIMES):
             for index, wallpaper in enumerate(daytime_files[daytime]):
                 # static background
@@ -147,41 +155,87 @@ class DynWallpaper:
                     timings[daytime][index][0])
 
                 # transition to next background
-                tmp = Et.SubElement(root, "transition", type="overlay")
-                Et.SubElement(tmp, "duration").text = str(
-                    timings[daytime][index][1])
-                Et.SubElement(tmp, "from").text = wallpaper
+                if not disable_transitions:
+                    tmp = Et.SubElement(root, "transition", type="overlay")
+                    Et.SubElement(tmp, "duration").text = str(
+                        timings[daytime][index][1])
+                    Et.SubElement(tmp, "from").text = wallpaper
 
-                if index + 1 >= len(daytime_files[daytime]):
-                    next_daytime_wallpapers = []
-                    while len(next_daytime_wallpapers) == 0:
-                        count += 1
-                        next_daytime_wallpapers = daytime_files[themedef.DAYTIMES[count % len(
-                            themedef.DAYTIMES)]]
-                    next_wallpaper = next_daytime_wallpapers[0]
-                else:
-                    next_wallpaper = daytime_files[daytime][index + 1]
+                    if index + 1 >= len(daytime_files[daytime]):
+                        next_daytime_wallpapers = []
+                        while len(next_daytime_wallpapers) == 0:
+                            count += 1
+                            next_daytime_wallpapers = daytime_files[themedef.DAYTIMES[count % len(
+                                themedef.DAYTIMES)]]
+                        next_wallpaper = next_daytime_wallpapers[0]
+                    else:
+                        next_wallpaper = daytime_files[daytime][index + 1]
 
-                Et.SubElement(tmp, "to").text = next_wallpaper
+                    Et.SubElement(tmp, "to").text = next_wallpaper
 
         xml_header = dom.Document().toxml()
         xml_str = dom.parseString(Et.tostring(root)).toprettyxml(
             indent="   ")[len(xml_header) + 1:]
 
-        xml_path = f'{WALLPAPER_XML_DIR}/{NAME}-{int(datetime.now().timestamp())}.xml'
+        return xml_str
+
+    def __create_xml_file(self, xml_string: str, xml_filename: str) -> str:
+        try:
+            xml_path = os.path.join(WALLPAPER_XML_DIR, xml_filename)
+
+            with open(xml_path, 'w') as f:
+                f.write(
+                    f'<!-- Generated by {NAME} {VERSION} by {AUTHOR} -->\n')
+                f.write(
+                    f'<!-- {GITHUB} -->\n')
+                f.write(xml_string)
+
+            return xml_path
+        except:
+            print(f"Failed to create file: {xml_path}")
+
+        return ""
+
+    def create_wallpaper_xml_files(self, transition_time=600) -> tuple:
+        opt_sett = self.__theme.optional_settings()
+        if themedef.OPT_PREF_TRANSITION_DURATION in opt_sett:
+            transition_time = opt_sett[themedef.OPT_PREF_TRANSITION_DURATION]
+        timestamp = int(datetime.now().timestamp())
+
+        # standard wallpaper theme
+        timings_standard = self.__calculate_timings(transition_time)
+        xml_standard = self.__generate_xml_string(
+            self.__theme.filelist_all(), timings_standard)
+        xml_standard_name = f'{NAME}-{timestamp}.xml'
+
+        # night mode wallpaper theme
+        daytimes_nightmode = dict([(d, []) for d in themedef.DAYTIMES])
+        daytimes_nightmode[themedef.FL_DAY] = self.__theme.filelist_night()
+
+        if len(self.__theme.filelist_night()) == 1:
+            timings_nightmode = self.__calculate_timings(0, nightmode=True)
+            xml_nightmode = self.__generate_xml_string(
+                daytimes_nightmode, timings_nightmode, disable_transitions=True)
+        else:
+            timings_nightmode = self.__calculate_timings(
+                transition_time, nightmode=True)
+            xml_nightmode = self.__generate_xml_string(
+                daytimes_nightmode, timings_nightmode)
+
+        xml_nightmode_name = f'{NAME}-{NIGHTMODE}-{timestamp}.xml'
 
         if os.path.exists(WALLPAPER_XML_DIR):
             clear_wallpaper_xml_dir()
         else:
             os.mkdir(WALLPAPER_XML_DIR)
 
-        with open(xml_path, 'w') as f:
-            f.write(
-                f'<!-- Generated by {NAME} {VERSION} by {AUTHOR} -->\n')
-            f.write(
-                f'<!-- {GITHUB} -->\n')
-            f.write(xml_str)
-        return xml_path
+        # save themes to files
+        xml_nightmode_path = self.__create_xml_file(
+            xml_nightmode, xml_nightmode_name)
+        xml_standard_path = self.__create_xml_file(
+            xml_standard, xml_standard_name)
+
+        return xml_standard_path, xml_nightmode_path
 
     def theme_wallpaper_ontime(self, date: datetime) -> str:
         timings = self.__calculate_timings(0)
