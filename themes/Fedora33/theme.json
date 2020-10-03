@@ -1,0 +1,24 @@
+{
+    "theme_title": "Fedora33",
+    "description": "Default Fedora 33 timed wallpaper",
+    "credits": "Fedora Project",
+    "wallpaper_filename": "f33-*.png",
+    "filelist": {
+        "sunrise": [
+            1
+        ],
+        "noon": [],
+        "day": [
+            2
+        ],
+        "sunset": [
+            3
+        ],
+        "night": [
+            4
+        ]
+    },
+    "optional_settings": {
+        "preferred_transition_duration": 7200
+    }
+}

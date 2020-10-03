@@ -1,0 +1,22 @@
+{
+    "theme_title": "Adwaita",
+    "description": "Default GNOME timed wallpaper",
+    "credits": "GNOME Foundation",
+    "wallpaper_filename": "adwaita-*.jpg",
+    "filelist": {
+        "sunrise": [
+            1
+        ],
+        "noon": [],
+        "day": [
+            2
+        ],
+        "sunset": [],
+        "night": [
+            3
+        ]
+    },
+    "optional_settings": {
+        "preferred_transition_duration": 7200
+    }
+}
