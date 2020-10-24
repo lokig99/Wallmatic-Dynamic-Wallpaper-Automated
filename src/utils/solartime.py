@@ -8,6 +8,9 @@ General sun position calculations based on NOAA Global Monitoring Division data
 for more information see: https://www.esrl.noaa.gov/gmd/grad/solcalc/solareqns.PDF
 """
 
+SUNRISE_SUNSET_ZENITH = 90.0  # degrees
+CIVIL_TWILIGHT_ZENITH = 96.0  # degrees
+
 
 def cos_dg(degrees):
     return cos(radians(degrees))
@@ -36,20 +39,31 @@ def sol_declination(f_year=fractional_year()):
         2 * f_year) + 0.000907 * sin(2 * f_year) - 0.002697 * cos(3 * f_year) + 0.00148 * sin(3 * f_year)
 
 
-def hour_angle_sunrise(latitude, decl=sol_declination()):
-    return acos_dg((cos_dg(90.833) / (cos_dg(latitude) * cos_dg(decl))) -
+def hour_angle_sunrise_sunset(latitude, decl=sol_declination()):
+    return acos_dg((cos_dg(SUNRISE_SUNSET_ZENITH) / (cos_dg(latitude) * cos_dg(decl))) -
+                   tan_dg(latitude * tan(decl)))
+
+
+def hour_angle_civil_twilight(latitude, decl=sol_declination()):
+    return acos_dg((cos_dg(CIVIL_TWILIGHT_ZENITH) / (cos_dg(latitude) * cos_dg(decl))) -
                    tan_dg(latitude * tan(decl)))
 
 
 def sunrise(longitude, latitude, timezone, ha=None, eqtime=eq_time()):
     if ha is None:
-        ha = hour_angle_sunrise(latitude)
+        ha = hour_angle_sunrise_sunset(latitude)
     return round(720 - 4 * (longitude + ha) - eqtime + 60 * timezone) * 60
 
 
 def sunset(longitude, latitude, timezone, ha=None, eqtime=eq_time()):
     if ha is None:
-        ha = hour_angle_sunrise(latitude)
+        ha = hour_angle_sunrise_sunset(latitude)
+    return round(720 - 4 * (longitude - ha) - eqtime + 60 * timezone) * 60
+
+
+def civil_twilight(longitude, latitude, timezone, ha=None, eqtime=eq_time()):
+    if ha is None:
+        ha = hour_angle_civil_twilight(latitude)
     return round(720 - 4 * (longitude - ha) - eqtime + 60 * timezone) * 60
 
 
@@ -59,14 +73,19 @@ def sol_noon(longitude, timezone, eqtime=eq_time()):
 
 def timetuple(latitude, longitude, timezone):
     return (
-        sunrise(longitude, latitude, timezone), sol_noon(longitude, timezone), sunset(longitude, latitude, timezone))
+        sunrise(longitude, latitude, timezone), sol_noon(longitude, timezone),
+        sunset(longitude, latitude, timezone), civil_twilight(longitude, latitude, timezone))
 
 
-def __get_daytime_dt(daytime_func: callable, latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
+def __get_daytime_dt(daytime_func, latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
     fy = fractional_year(date)
     eqt = eq_time(fy)
     dec = sol_declination(fy)
-    ha = hour_angle_sunrise(latitude, dec)
+
+    if daytime_func is civil_twilight:
+        ha = hour_angle_civil_twilight(latitude, dec)
+    else:
+        ha = hour_angle_sunrise_sunset(latitude, dec)
 
     if daytime_func is sol_noon:
         daytime_seconds = daytime_func(longitude, timezone, eqt)
@@ -89,3 +108,7 @@ def get_sunrise_datetime(latitude: float, longitude: float, date: datetime, time
 
 def get_noon_datetime(latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
     return __get_daytime_dt(sol_noon, latitude, longitude, date, timezone)
+
+
+def get_civil_twilight_datetime(latitude: float, longitude: float, date: datetime, timezone: float) -> datetime:
+    return __get_daytime_dt(civil_twilight, latitude, longitude, date, timezone)

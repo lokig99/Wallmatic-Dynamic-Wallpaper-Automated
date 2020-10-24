@@ -22,8 +22,8 @@ def generate_thumbnails():
             img_day = Image.open(day_img_path)
             img_night = Image.open(night_img_path)
 
-            img_day.thumbnail(THUMBNAIL_SIZE)
-            img_night.thumbnail(THUMBNAIL_SIZE)
+            img_day = img_day.resize(THUMBNAIL_SIZE)
+            img_night = img_night.resize(THUMBNAIL_SIZE)
 
             img_night = img_night.crop(THUMBNAIL_CROP_BOX)
 

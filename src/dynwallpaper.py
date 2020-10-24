@@ -22,10 +22,6 @@ DAY_SUNSET_RATIO = 2 / 3
 # total noon duration (in seconds) including transition to daytime wallpaper
 NOON_DURATION = 1800
 
-# how long it takes to get actually dark after sunset (in seconds)
-# rough average approximation based on nautical twilight for latitudes between 0 to 70 degrees (N/S)
-TWILIGHT_DURATION = 3600
-
 NIGHTMODE = "NightMode"
 
 # ---------------- Dynamic Wallpaper class --------------------
@@ -36,7 +32,7 @@ class DynWallpaper:
         self.__latitude, self.__longitude = DEFAULT_GEOLOCATION
         self.__timezone = local_tzoffset()
         self.__theme = WallpaperTheme()
-        self.__sunrise, self.__snoon, self.__sunset = soltime.timetuple(
+        self.__sunrise, self.__snoon, self.__sunset, self.__twilight = soltime.timetuple(
             self.__latitude, self.__longitude, self.__timezone)
 
     def set_geolocation_online(self):
@@ -53,7 +49,7 @@ class DynWallpaper:
         self.__latitude, self.__longitude = latitude, longitude
 
     def update_soltime(self):
-        self.__sunrise, self.__snoon, self.__sunset = soltime.timetuple(
+        self.__sunrise, self.__snoon, self.__sunset, self.__twilight = soltime.timetuple(
             self.__latitude, self.__longitude, self.__timezone)
 
     def set_theme(self, theme_dirpath: str) -> bool:
@@ -70,21 +66,22 @@ class DynWallpaper:
         timings = dict(zip(themedef.DAYTIMES, repeat([])))
         sunrise_dur = self.__snoon - self.__sunrise
         noon_dur = NOON_DURATION
+        twilight_dur = (self.__twilight - self.__sunset)
         day_dur = (self.__sunset - self.__snoon -
                    noon_dur) * DAY_SUNSET_RATIO
         sunset_dur = (self.__sunset - self.__snoon -
-                      noon_dur) - day_dur + TWILIGHT_DURATION
+                      noon_dur) - day_dur + twilight_dur
         night_dur = DAY_LENGTH - sunrise_dur - noon_dur - day_dur - sunset_dur
 
-        if len(self.__theme.filelist_sunrise()) == 0 or nightmode:
+        if not self.__theme.filelist_sunrise() or nightmode:
             day_dur += sunrise_dur
             sunrise_dur = 0
 
-        if len(self.__theme.filelist_noon()) == 0 or nightmode:
+        if not self.__theme.filelist_noon() or nightmode:
             day_dur += noon_dur
             noon_dur = 0
 
-        if len(self.__theme.filelist_sunset()) == 0 or nightmode:
+        if not self.__theme.filelist_sunset() or nightmode:
             day_dur += sunset_dur
             sunset_dur = 0
 
@@ -163,7 +160,7 @@ class DynWallpaper:
 
                     if index + 1 >= len(daytime_files[daytime]):
                         next_daytime_wallpapers = []
-                        while len(next_daytime_wallpapers) == 0:
+                        while not next_daytime_wallpapers:
                             count += 1
                             next_daytime_wallpapers = daytime_files[themedef.DAYTIMES[count % len(
                                 themedef.DAYTIMES)]]

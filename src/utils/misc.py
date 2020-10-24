@@ -1,11 +1,12 @@
 #!/bin/python3
 
 from datetime import datetime
+from collections.abc import Collection
 
 # --------------------- miscellaneous -------------------------
 
 
-def flatten(lst: list) -> list:
+def flatten(lst: Collection) -> list:
     return [item for sublist in lst for item in sublist]
 
 

@@ -32,8 +32,10 @@ def select_theme() -> str:
         print(f'[{i}]\t{theme.replace("_", " ")}')
     choice = input('\nselect theme (eg: 1, default=0): ')
     if not choice.isdigit() or int(choice) >= len(themes):
-        choice = 0
-    return os.path.join(THEMES_DIR, themes[int(choice)])
+        choice_int = 0
+    else:
+        choice_int = int(choice)
+    return os.path.join(THEMES_DIR, themes[choice_int])
 
 
 class WallpaperTheme:
@@ -81,12 +83,12 @@ class WallpaperTheme:
     def credits(self) -> str:
         if self.ready():
             return self.__themedict[themedef.CREDITS]
-
         return ""
 
     def description(self) -> str:
         if self.ready():
             return self.__themedict[themedef.DESCRIPTION]
+        return ""
 
     def filelist_sunrise(self) -> list:
         if self.ready():

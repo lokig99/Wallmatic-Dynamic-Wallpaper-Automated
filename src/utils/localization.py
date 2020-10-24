@@ -34,7 +34,7 @@ def get_geolocation() -> tuple:
     pool = ThreadPool(processes=1)
     locator = pool.apply_async(__get_location, range(1))
 
-    timer = 0
+    timer = 0.0
     result = None
 
     while timer < TIMEOUT:

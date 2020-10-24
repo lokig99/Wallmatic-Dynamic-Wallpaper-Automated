@@ -35,7 +35,7 @@ def loop():
         dt_timetuple = datetime.now().timetuple()
         return dt_timetuple.tm_year, dt_timetuple.tm_yday
 
-    def change_themes(gtk_theme: str, shell_theme: str, cursor_theme: str) -> bool:
+    def change_themes(gtk_theme: str, shell_theme: str, cursor_theme: str) -> None:
         change_gtk_theme(gtk_theme)
         time.sleep(0.1)
         change_cursor_theme(cursor_theme)
